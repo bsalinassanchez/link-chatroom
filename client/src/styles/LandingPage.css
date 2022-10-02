@@ -1,0 +1,15 @@
+.landing-main .landing-intro {
+	font-family: sans-serif;
+}
+.landing-main .landing-content {
+	font-family: sans-serif;
+}
+
+.landing-main {
+	padding-top: 15%;
+	height: auto;
+}
+
+.landing-main .landing-actions {
+	padding: 20px;
+}
