@@ -44,6 +44,26 @@ export default function LoginPage() {
 			setError(true);
 			console.log("one of the login fields was empty");
 		} else {
+			Axios.post("http://localhost:3001/getiv", { email: data.get("email") }).then((response) => {
+				//console.log(response.data.iv + " " + response.data.password);
+				//login request
+				Axios.post("http://localhost:3001/login", {
+					email: data.get("email"),
+					password: data.get("password"),
+					iv: response.data.iv,
+					encryptedPW: response.data.password,
+				}).then((response) => {
+					//
+					if (response.data.loginStatus === true) {
+						console.log("login succesfull");
+						navigate(`/dashboard/${data.get("email")}`, { replace: true });
+					}
+					if (response.data.loginStatus === false) {
+						console.log("wrong pw/email/user combination");
+					}
+				});
+			});
+			/*
 			// request if user exists
 			Axios.post("http://localhost:3001/login", {
 				//send users info to see if they exist
@@ -71,6 +91,7 @@ export default function LoginPage() {
 					console.log("system error, more than one user found");
 				}
 			});
+			*/
 		}
 	};
 

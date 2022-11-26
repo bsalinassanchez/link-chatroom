@@ -4,6 +4,8 @@ const mysql = require("mysql");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
+const { encrypt, decrypt } = require("./PWEncryption");
+const { getSystemErrorMap } = require("util");
 
 app.use(cors());
 app.use(express.json());
@@ -36,12 +38,13 @@ app.post("/register", (req, res) => {
 	const last = req.body.last;
 	const email = req.body.email;
 	const password = req.body.password;
+	const safePW = encrypt(password);
 
 	//db.query("SELECT * FROM users WHERE")
 
 	db.query(
-		"INSERT INTO users (first, last, email, password) VALUES (?,?,?,?)",
-		[first, last, email, password],
+		"INSERT INTO users (first, last, email, password, iv) VALUES (?,?,?,?,?)",
+		[first, last, email, safePW.password, safePW.iv],
 		(err, result) => {
 			if (err) {
 				console.log("err");
@@ -50,6 +53,20 @@ app.post("/register", (req, res) => {
 			}
 		}
 	);
+});
+
+//post that gets the potential IV
+app.post("/getiv", (req, res) => {
+	const email = req.body.email;
+	db.query("SELECT * FROM users WHERE email=?", email, (err, result) => {
+		if (err) {
+			res.send({ err: err });
+		}
+		if (result.length === 1) {
+			//console.log(result[0].iv);
+			res.send({ iv: result[0].iv, password: result[0].password });
+		}
+	});
 });
 
 //post that checks to see if an email is already associated with a user account
@@ -78,6 +95,17 @@ app.post("/check-email", (req, res) => {
 app.post("/login", (req, res) => {
 	const email = req.body.email;
 	const password = req.body.password;
+	const iv = req.body.iv;
+	const encrypted = req.body.encryptedPW;
+
+	//decrypt password
+	const decryptedPW = decrypt({ password: encrypted, iv: iv });
+
+	if (decryptedPW === password) {
+		res.send({ loginStatus: true });
+	} else res.send({ loginStatus: false });
+
+	/*
 	db.query("SELECT * FROM users WHERE email=? AND password=?", [email, password], (err, result) => {
 		if (err) {
 			//there was an error getting the user
@@ -97,6 +125,7 @@ app.post("/login", (req, res) => {
 			res.send({ error: "more than one user found!!!" });
 		}
 	});
+	*/
 });
 
 io.on("connection", (socket) => {
